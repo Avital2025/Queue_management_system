@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+  <script>
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var calendarEl = document.getElementById('calendar');
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth'
+      });
+      calendar.render();
+    });
+
+  </script>
+  <title>Document</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+
+<body>
+  <div id='calendar'></div>
+
+  <button id="post">post</button>
+  <button id="delete">delete</button>
+  <button id="update">update</button>
+  <form id="form">
+    <input id="event" placeholder="event  ">
+    <input id="date" placeholder="date">
+
+
+    <label for="eventSelect">בחר אירוע למחיקה או עדכון :</label>
+    <select id="eventSelect" required>
+      <option value="">בחר אירוע</option>
+    </select>
+    <br>
+  </form>
+
+  <script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+      axios.get("http://localhost:5149/api/Events").then((res) => {
+        var calendarEl = document.getElementById("calendar");
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: "dayGridMonth",
+          events: res.data,
+        });
+        calendar.render();
+      });
+    });
+    document.querySelector("#post").onclick = () => {
+      let evenT = document.querySelector("#event").value;
+      let date = document.querySelector("#date").value;
+      axios.post('http://localhost:5149/api/Events', { "title": evenT, "start": date })
+        .then(response => {
+          console.log('אירוע נוסף בהצלחה:', response.data);
+          alert('האירוע נוסף בהצלחה!');
+          location.reload();
+        })
+        .catch(error => {
+          console.error('שגיאה בהוספת האירוע:', error);
+          alert('אירעה שגיאה בהוספת האירוע.');
+        });
+
+    };
+    function loadEvents() {
+      axios.get("http://localhost:5149/api/Events")
+        .then((res) => {
+          const events = res.data;
+          const d = document.getElementById('eventSelect');
+
+          d.innerHTML = '<option value="">בחר אירוע</option>';
+
+          events.forEach(event => {
+            const option = document.createElement('option');
+            option.value = event.id;
+            option.textContent = event.title;
+            d.appendChild(option);
+          });
+        })
+        .catch(error => {
+          console.error('שגיאה בטעינת האירועים', error);
+        });
+    }
+    window.onload = () => {
+      loadEvents();
+
+    };
+
+    document.querySelector("#delete").onclick = () => {
+      const eventId = document.querySelector('#eventSelect').value;
+      const selectedEventId = eventSelect.value;
+      if (!selectedEventId) {
+        alert('נא לבחור אירוע למחיקה.');
+        return;
+      }
+      axios.delete(`http://localhost:5149/api/Events/${eventId}`).then((res) => {
+        console.log('האירוע נמחק בהצלחה', res.data);
+        alert('האירוע נמחק בהצלחה!');
+        location.reload();
+      })
+        .catch(error => {
+          console.error('שגיאה במחיקת האירוע', error);
+          alert('שגיאה במחיקת האירוע');
+        });
+    }
+    document.querySelector("#update").onclick = () => {
+      const eventSelect = document.getElementById('eventSelect');
+      const selectedEventId = eventSelect.value;
+      if (!selectedEventId) {
+        alert('נא לבחור אירוע לעדכון.');
+        return;
+      }
+      let evenTime = document.querySelector("#event").value;
+      let date = document.querySelector("#date").value;
+      axios.put(`http://localhost:5149/api/Events/${selectedEventId}`, { "title": evenTime, "start": date }).then(response => {
+        console.log('האירוע התעדכן בהצלחה', response.data);
+        alert('האירוע התעדכן בהצלחה!');
+        location.reload();
+      })
+        .catch(error => {
+          console.error('שגיאה בעדכון האירוע', error);
+          alert('שגיאה בעדכון האירוע');
+        });
+     
+    }
+    document.getElementById('eventSelect').addEventListener("change", () => {
+        const eventSelected = document.getElementById('eventSelect');
+        axios.get("http://localhost:5149/api/Events")
+          .then(response => {
+            const even = response.data;
+            const chose = even[eventSelected.selectedIndex - 1]
+            document.querySelector("#event").value = chose.title;
+            document.querySelector("#date").value = chose.start;
+          })
+          .catch(error => {
+            console.error('שגיאה במילוי האירוע:', error);
+          });
+      })
+
+  </script>
+
+</body>
+
+</html>
